@@ -70,8 +70,8 @@ class TestDoclingAgentNotebook:
         response = query_engine.query('Test query')
         assert str(response) == 'Query response'
 
-# ──────────────────────────────────────────────────────────────────────────────
-#     WHY ARE THESE A STANDALONE FUNCTIONAL TESTS (NOT A UNITTEST CLASS METHOD)?
+#     ──────────────────────────────────────────────────────────────────────────────
+#     WHY ARE THESE A STANDALONE FUNCTIONAL TESTS (NOT UNITTEST CLASS METHODS)?
 #     ──────────────────────────────────────────────────────────────────────────────
 #     1. **Isolation from Side Effects**:
 #        - These tests do not need test setup/teardown or shared fixtures.
