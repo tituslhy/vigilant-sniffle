@@ -2,9 +2,6 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from typing import Any
 
-from llama_index.core.agent.workflow import FunctionAgent
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
-
 class TestDoclingAgentNotebook:
     """
     Unit tests for the docling agent notebook logic, with all external dependencies mocked.
@@ -71,7 +68,7 @@ class TestDoclingAgentNotebook:
         assert str(response) == 'Query response'
 
 #     ──────────────────────────────────────────────────────────────────────────────
-#     WHY ARE THESE A STANDALONE FUNCTIONAL TESTS (NOT UNITTEST CLASS METHODS)?
+#     WHY ARE THESE A STANDALONE FUNCTIONAL TESTS (NOT A UNITTEST CLASS METHOD)?
 #     ──────────────────────────────────────────────────────────────────────────────
 #     1. **Isolation from Side Effects**:
 #        - These tests do not need test setup/teardown or shared fixtures.
@@ -81,7 +78,7 @@ class TestDoclingAgentNotebook:
 #        - The async/await behavior fits better in a plain `async def` + `pytest.mark.asyncio`
 #          test than in `unittest.TestCase`, which requires an async runner or extra boilerplate.
 
-#     3. **Mock Strategy Complexity**:
+#     4. **Mock Strategy Complexity**:
 #        - This test patches `FunctionAgent`, `AgentStream`, and `QueryEngineTool` just
 #          enough to avoid triggering deep workflow logic.
 #        - Since it doesn't test implementation internals (e.g., step workers, memory ops),
@@ -114,6 +111,28 @@ async def test_agent_streaming_mocked_everything(
     End-to-end test that validates the agent's streaming behavior in isolation,
     by mocking **everything** it depends on. This test avoids relying on any real LLM,
     memory, or query engine logic — and instead verifies just the streaming event flow.
+
+    ──────────────────────────────────────────────────────────────────────────────
+    WHY IS THIS A STANDALONE FUNCTIONAL TEST (NOT A UNITTEST CLASS METHOD)?
+    ──────────────────────────────────────────────────────────────────────────────
+    1. **Isolation from Side Effects**:
+       - This test does not need test setup/teardown or shared fixtures.
+       - No test state is reused — everything is mocked fresh inside the test function.
+
+    2. **Functional Emphasis**:
+       - We’re treating the `agent.run()` → `handler.stream_events()` + `await handler`
+         pattern as a **functional contract**, which makes sense to validate as a single
+         contained test.
+
+    3. **Simpler with `pytest.mark.asyncio`**:
+       - The async/await behavior fits better in a plain `async def` + `pytest.mark.asyncio`
+         test than in `unittest.TestCase`, which requires an async runner or extra boilerplate.
+
+    4. **Mock Strategy Complexity**:
+       - This test patches `FunctionAgent`, `AgentStream`, and `QueryEngineTool` just
+         enough to avoid triggering deep workflow logic.
+       - Since it doesn't test implementation internals (e.g., step workers, memory ops),
+         nesting it into a class would imply shared internal state — which it does *not* use.
 
     ──────────────────────────────────────────────────────────────────────────────
     WHAT IS `FakeHandler` AND WHY A NESTED CLASS?
@@ -164,7 +183,6 @@ async def test_agent_streaming_mocked_everything(
         This test double enables full end-to-end testing of streaming agent workflows,
         without invoking any real LLM, network calls, or agent logic.
         """
-
         def __init__(self, events, final_value: str):
             """
             Parameters:
@@ -185,8 +203,7 @@ async def test_agent_streaming_mocked_everything(
             with a `.delta` field (e.g., "Delta1", "Delta2").
 
             Yielding them one by one simulates how a real LLM might stream out token deltas.
-            """
-
+            """            
             for e in self._events:
                 yield e
 
@@ -203,8 +220,14 @@ async def test_agent_streaming_mocked_everything(
 
             Technically, this wraps an async coroutine in `__await__()` so that Python's
             await machinery treats this object like a coroutine.
-            """
+            """            
             async def _coro():
+                """This function implements awaitability for the handler - this FakeHandler is not
+                asynchronous, but we need to make it awaitable to mimic the real handler's behavior.
+                
+                This method simply returns a stored value (self._final_value) when awaited.
+                Why define it inside? Because it’s used only here, and it keeps things encapsulated.
+                """
                 return self._final_value
             return _coro().__await__()
 
@@ -219,6 +242,9 @@ async def test_agent_streaming_mocked_everything(
     mock_query_engine_tool_cls.return_value = MagicMock(name="DummyTool")
 
     # Step D: Import symbols after patching (to pick up the mocks!)
+    from llama_index.core.agent.workflow import FunctionAgent
+    from llama_index.core.tools import QueryEngineTool, ToolMetadata
+
     dummy_tool = QueryEngineTool(
         query_engine=MagicMock(),  # unused
         metadata=ToolMetadata(
