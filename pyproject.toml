@@ -19,4 +19,5 @@ dependencies = [
     "pytest-cov>=6.1.1",
     "python-dotenv>=1.1.0",
     "qdrant-client>=1.14.2",
+    "pytest-asyncio>=1.0.0",
 ]
