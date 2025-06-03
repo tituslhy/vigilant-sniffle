@@ -1,0 +1,19 @@
+[project]
+name = "vigilant-sniffle"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=6.29.5",
+    "jupyter>=1.1.1",
+    "llama-index>=0.12.40",
+    "llama-index-embeddings-ollama>=0.6.0",
+    "llama-index-llms-ollama>=0.6.1",
+    "llama-index-node-parser-docling>=0.3.2",
+    "llama-index-readers-docling>=0.3.3",
+    "llama-index-vector-stores-qdrant>=0.6.0",
+    "pytest>=8.4.0",
+    "pytest-cov>=6.1.1",
+    "python-dotenv>=1.1.0",
+]
